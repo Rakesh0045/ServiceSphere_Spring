@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap');
+
+:root {
+  --primary-color: #6a5af9; 
+  --primary-light: #a99eff; 
+  --accent-color: #f92bff;
+  --dark-bg: #10101a; 
+  --card-bg: #191925; 
+  --text-primary: #f0f0f5;
+  --text-secondary: #a0a0b0; 
+  --border-color: rgba(255, 255, 255, 0.1);
+  --success-color: #2ecc71; 
+  --warning-color: #f39c12; 
+  --error-color: #e74c3c;
+}
+
+/* --- Base & Scrollbar Styles --- */
+body { 
+  margin: 0; 
+  background-color: var(--dark-bg); 
+  color: var(--text-primary); 
+  font-family: 'Outfit', sans-serif; 
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--dark-bg);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border: 2px solid var(--dark-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--primary-color);
+}

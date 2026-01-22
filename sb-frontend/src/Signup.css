@@ -1,0 +1,229 @@
+ @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap');
+
+        :root {
+            --primary-color: #6a5af9;
+            --primary-light: #a99eff;
+            --accent-color: #f92bff;
+            --dark-bg: #10101a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-primary: #f0f0f5;
+            --text-secondary: #a0a0b0;
+            --input-bg: rgba(255, 255, 255, 0.08);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- Global & Body Styles --- */
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* ========================================
+        --- ✨ CUSTOM SCROLLBAR STYLES ✨ ---
+        ========================================
+        */
+
+        /* For Firefox */
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--dark-bg);
+        }
+
+        /* For Webkit Browsers (Chrome, Safari, new Edge) */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 20px;
+            border: 2px solid var(--dark-bg); /* Creates a nice padding effect */
+            transition: background-color 0.3s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: var(--primary-light);
+        }
+
+
+        /* --- Base & Background --- */
+        .signup-bg {
+            min-height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--dark-bg) url("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80") no-repeat center center fixed;
+            background-size: cover;
+            background-blend-mode: overlay;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        /* --- Signup Card --- */
+        .signup-card {
+            max-width: 420px;
+            width: 100%;
+            padding: 3rem;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            text-align: center;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Gradient Header --- */
+        .signup-card h2.gradient-text {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 2.5rem;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: var(--primary-color);
+        }
+
+        /* --- Form & Inputs --- */
+        .signup-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            text-align: left;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .signup-form label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            padding-left: 0.25rem;
+        }
+
+        .signup-form input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .signup-form input::placeholder {
+            color: rgba(240, 240, 245, 0.4);
+        }
+
+        .signup-form input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(106, 90, 249, 0.2);
+        }
+        
+        /* --- Role Selection Buttons --- */
+        .role-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .role-btn:hover {
+            background-color: var(--input-bg);
+            border-color: var(--primary-color);
+        }
+
+        .role-btn.active-role {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 15px rgba(106, 90, 249, 0.3);
+        }
+
+        /* --- Submit Button --- */
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1rem;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Switch to Login Link --- */
+        .switch-text {
+            font-size: 0.9rem;
+            margin-top: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .switch-text a {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .switch-text a:hover {
+            text-decoration: underline;
+            color: var(--accent-color);
+        }
+        
+        /* --- Responsive Design --- */
+        @media (max-width: 500px) {
+            .signup-card {
+                padding: 2rem;
+                max-width: 100%;
+            }
+            .signup-card h2.gradient-text {
+                font-size: 1.8rem;
+                margin-bottom: 2rem;
+            }
+        }

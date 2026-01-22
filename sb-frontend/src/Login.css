@@ -1,0 +1,217 @@
+/* --- Inherited Theme Variables & Font --- */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap');
+
+        :root {
+          --primary-color: #6a5af9;
+          --primary-light: #a99eff;
+          --accent-color: #f92bff;
+          --dark-bg: #10101a;
+          --card-bg: rgba(255, 255, 255, 0.05);
+          --text-primary: #f0f0f5;
+          --text-secondary: #a0a0b0;
+          --input-bg: rgba(255, 255, 255, 0.08);
+          --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- Base & Background --- */
+        .login-bg {
+          min-height: 100vh;
+          width: 100vw;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-family: 'Outfit', sans-serif;
+          background: var(--dark-bg) url("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80") no-repeat center center fixed;
+          background-size: cover;
+          background-blend-mode: overlay;
+          padding: 2rem;
+          box-sizing: border-box;
+        }
+
+        /* --- Login Card --- */
+        .login-card {
+          position: relative;
+          max-width: 420px;
+          width: 100%;
+          padding: 3rem;
+          background-color: var(--card-bg);
+          border-radius: 20px;
+          border: 1px solid var(--border-color);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+          text-align: center;
+          animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Back to Home Button --- */
+        .back-to-home {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .back-to-home:hover {
+            color: var(--primary-light);
+        }
+
+        /* --- Header & Subtitle --- */
+        .login-card h2.gradient-text {
+          font-size: 2.2rem;
+          font-weight: 700;
+          margin-bottom: 0.75rem;
+          background: linear-gradient(90deg, var(--primary-light), var(--accent-color));
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: var(--primary-color);
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* --- Form & Inputs --- */
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+          text-align: left;
+        }
+
+        .input-group {
+          position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            left: 1rem;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            transition: color 0.3s ease;
+        }
+
+        .login-form input {
+          width: 100%;
+          padding: 0.9rem 1rem 0.9rem 3rem; /* Adjusted padding for icon */
+          background-color: var(--input-bg);
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          color: var(--text-primary);
+          font-size: 1rem;
+          font-family: 'Outfit', sans-serif;
+          transition: all 0.3s ease;
+          box-sizing: border-box;
+        }
+
+        .login-form input::placeholder {
+          color: rgba(240, 240, 245, 0.4);
+        }
+
+        .login-form input:focus {
+          outline: none;
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 4px rgba(106, 90, 249, 0.2);
+        }
+
+        .login-form input:focus + .input-icon {
+            color: var(--primary-color);
+        }
+
+        .login-form label {
+           display: none;
+        }
+
+        /* --- Form Options (Forgot Password) --- */
+        .form-options {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: -0.75rem;
+        }
+
+        .forgot-password {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-password:hover {
+            color: var(--primary-light);
+            text-decoration: underline;
+        }
+
+        /* --- Submit Button --- */
+        .submit-btn {
+          width: 100%;
+          padding: 1rem;
+          margin-top: 1rem;
+          background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+          border: none;
+          border-radius: 12px;
+          color: white;
+          font-weight: 700;
+          font-size: 1rem;
+          letter-spacing: 0.5px;
+          cursor: pointer;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+          transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Switch to Signup Link --- */
+        .switch-text {
+          font-size: 0.9rem;
+          margin-top: 2rem;
+          color: var(--text-secondary);
+        }
+
+        .switch-text a {
+          color: var(--primary-light);
+          text-decoration: none;
+          font-weight: 600;
+          transition: color 0.3s ease;
+        }
+
+        .switch-text a:hover {
+          text-decoration: underline;
+          color: var(--accent-color);
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 500px) {
+          .login-card {
+            padding: 2.5rem 1.5rem;
+            max-width: 100%;
+          }
+          
+          .back-to-home {
+            top: 1.5rem;
+            left: 1.5rem;
+          }
+
+          .login-card h2.gradient-text {
+            font-size: 1.8rem;
+          }
+        }
