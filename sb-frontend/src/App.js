@@ -6,7 +6,8 @@ import Home from "./Home";
 import CustomerDashboard from "./CustomerDashboard";
 import ProviderDashboard from "./ProviderDashboard";
 import MyBookings from "./MyBookings";
-import AdminDashboard from "./AdminDashboard"; 
+import AdminDashboard from "./AdminDashboard";
+import NotFound from "./NotFound";
 
 function App() {
   return (
@@ -18,7 +19,9 @@ function App() {
         <Route path="/customer" element={<CustomerDashboard />} />
         <Route path="/provider" element={<ProviderDashboard />} />
         <Route path="/my-bookings" element={<MyBookings />} />
-        <Route path="/admin" element={<AdminDashboard />} /> {/* <-- ADD THIS ROUTE */}
+        <Route path="/admin" element={<AdminDashboard />} />
+        {/* Catch-all 404 route */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

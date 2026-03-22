@@ -11,7 +11,6 @@ import com.kce.localservices.repository.ServiceRepository;
 import com.kce.localservices.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-// import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
@@ -42,20 +41,21 @@ public class BookingService {
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional
     public void createBooking(Booking booking) {
         User currentUser = userService.getCurrentUser();
         booking.setCustomerId(currentUser.getId());
         booking.setStatus("Pending");
 
-        // Calculate end time (1 hour duration as per server.js)
+        // Calculate end time (1 hour duration)
         Date startTime = booking.getBookingStartTime();
-        Date endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour
+        Date endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
         booking.setBookingEndTime(endTime);
 
         // Check availability
-        // Logic: Check if any booking exists for provider at this start time with
-        // status Pending or Confirmed
         List<Booking> existing = bookingRepository.findByProviderIdAndBookingStartTimeAndStatusIn(
                 booking.getProviderId(),
                 startTime,
@@ -67,9 +67,31 @@ public class BookingService {
 
         bookingRepository.save(booking);
 
-        // Publish analytics events for new booking
+        // Analytics events
         eventPublisher.publishEvent(new AnalyticsEvent(this, "total_bookings", 1));
         eventPublisher.publishEvent(new AnalyticsEvent(this, "pending_bookings", 1));
+
+        // Fetch service name for notification
+        String serviceName = serviceRepository.findById(booking.getServiceId())
+                .map(Service::getServiceName).orElse("a service");
+
+        // Notify the provider about the new booking request
+        notificationService.createNotification(
+                booking.getProviderId(),
+                "New Booking Request",
+                currentUser.getName() + " has requested to book \"" + serviceName + "\".",
+                "BOOKING_CREATED",
+                booking.getId()
+        );
+
+        // Confirm receipt to the customer
+        notificationService.createNotification(
+                currentUser.getId(),
+                "Booking Submitted",
+                "Your booking request for \"" + serviceName + "\" has been sent. Awaiting provider confirmation.",
+                "BOOKING_CREATED",
+                booking.getId()
+        );
     }
 
     public List<Map<String, Object>> getBookings() {
@@ -84,7 +106,6 @@ public class BookingService {
             throw new RuntimeException("Unauthorized role.");
         }
 
-        // Map to response format
         return bookings.stream().map(b -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", b.getId());
@@ -109,7 +130,6 @@ public class BookingService {
                 map.put("provider_name", provider.getName());
             }
 
-            // Fetch review data if exists
             Review review = reviewRepository.findByBookingId(b.getId()).orElse(null);
             if (review != null) {
                 map.put("review_id", review.getId());
@@ -125,37 +145,87 @@ public class BookingService {
         }).collect(Collectors.toList());
     }
 
+    @Transactional
     public void updateBookingStatus(Integer bookingId, String status) {
         User currentUser = userService.getCurrentUser();
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        if (!booking.getProviderId().equals(currentUser.getId())) {
-            throw new RuntimeException("You do not have permission.");
+        boolean isProvider = booking.getProviderId().equals(currentUser.getId())
+                && "Service Provider".equals(currentUser.getRole());
+        boolean isCustomerCancelling = booking.getCustomerId().equals(currentUser.getId())
+                && "Customer".equals(currentUser.getRole())
+                && "Cancelled".equals(status)
+                && "Pending".equals(booking.getStatus()); // customers can only cancel pending bookings
+
+        if (!isProvider && !isCustomerCancelling) {
+            throw new RuntimeException("You do not have permission to perform this action.");
         }
 
         String oldStatus = booking.getStatus();
         booking.setStatus(status);
         bookingRepository.save(booking);
 
-        // Publish analytics events for status changes
+        // Analytics events
         if (!oldStatus.equals(status)) {
-            // Decrement old status count
-            if ("Pending".equals(oldStatus)) {
-                eventPublisher.publishEvent(new AnalyticsEvent(this, "pending_bookings", -1));
-            } else if ("Cancelled".equals(oldStatus)) {
-                eventPublisher.publishEvent(new AnalyticsEvent(this, "cancelled_bookings", -1));
-            } else if ("Completed".equals(oldStatus)) {
-                eventPublisher.publishEvent(new AnalyticsEvent(this, "completed_bookings", -1));
-            }
+            if ("Pending".equals(oldStatus)) eventPublisher.publishEvent(new AnalyticsEvent(this, "pending_bookings", -1));
+            else if ("Cancelled".equals(oldStatus)) eventPublisher.publishEvent(new AnalyticsEvent(this, "cancelled_bookings", -1));
+            else if ("Completed".equals(oldStatus)) eventPublisher.publishEvent(new AnalyticsEvent(this, "completed_bookings", -1));
 
-            // Increment new status count
-            if ("Pending".equals(status)) {
-                eventPublisher.publishEvent(new AnalyticsEvent(this, "pending_bookings", 1));
-            } else if ("Cancelled".equals(status)) {
-                eventPublisher.publishEvent(new AnalyticsEvent(this, "cancelled_bookings", 1));
-            } else if ("Completed".equals(status)) {
-                eventPublisher.publishEvent(new AnalyticsEvent(this, "completed_bookings", 1));
+            if ("Pending".equals(status)) eventPublisher.publishEvent(new AnalyticsEvent(this, "pending_bookings", 1));
+            else if ("Cancelled".equals(status)) eventPublisher.publishEvent(new AnalyticsEvent(this, "cancelled_bookings", 1));
+            else if ("Completed".equals(status)) eventPublisher.publishEvent(new AnalyticsEvent(this, "completed_bookings", 1));
+        }
+
+        // Fetch service name for notifications
+        String serviceName = serviceRepository.findById(booking.getServiceId())
+                .map(Service::getServiceName).orElse("a service");
+
+        // Send notifications based on the new status
+        switch (status) {
+            case "Confirmed" -> {
+                // Notify customer
+                notificationService.createNotification(
+                        booking.getCustomerId(),
+                        "Booking Confirmed! 🎉",
+                        "Your booking for \"" + serviceName + "\" has been confirmed by the provider.",
+                        "BOOKING_CONFIRMED",
+                        bookingId
+                );
+            }
+            case "Completed" -> {
+                // Notify customer to leave a review
+                notificationService.createNotification(
+                        booking.getCustomerId(),
+                        "Service Completed",
+                        "Your booking for \"" + serviceName + "\" is marked complete. Share your experience!",
+                        "BOOKING_COMPLETED",
+                        bookingId
+                );
+            }
+            case "Cancelled" -> {
+                // Notify the other party
+                if (isProvider) {
+                    // Provider cancelled → notify customer
+                    notificationService.createNotification(
+                            booking.getCustomerId(),
+                            "Booking Cancelled",
+                            "Unfortunately, your booking for \"" + serviceName + "\" was cancelled by the provider.",
+                            "BOOKING_CANCELLED",
+                            bookingId
+                    );
+                } else {
+                    // Customer cancelled → notify provider
+                    User customer = userRepository.findById(booking.getCustomerId()).orElse(null);
+                    String customerName = customer != null ? customer.getName() : "A customer";
+                    notificationService.createNotification(
+                            booking.getProviderId(),
+                            "Booking Cancelled",
+                            customerName + " cancelled their booking for \"" + serviceName + "\".",
+                            "BOOKING_CANCELLED",
+                            bookingId
+                    );
+                }
             }
         }
     }

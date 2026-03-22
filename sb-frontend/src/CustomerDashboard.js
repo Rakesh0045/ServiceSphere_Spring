@@ -5,7 +5,9 @@ import "./CustomerDashboard.css";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BookingModal from './BookingModal';
-import ServiceDetailModal from "./ServiceDetailModal"; // Import the new modal
+import ServiceDetailModal from "./ServiceDetailModal";
+import NotificationBell from './NotificationBell';
+import ChangePasswordModal from './ChangePasswordModal';
 
 const API_BASE = "http://localhost:8070/api";
 
@@ -17,6 +19,7 @@ const PowerIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" heigh
 const SortIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 4h18M3 8h12M3 12h8M3 16h4" /></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
 const StarIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>;
 
 const StarRating = ({ rating, count }) => {
@@ -34,29 +37,28 @@ const StarRating = ({ rating, count }) => {
 
 const CustomerDashboard = () => {
     const [services, setServices] = useState([]);
-    const [allServices, setAllServices] = useState([]); // Store all fetched services
+    const [allServices, setAllServices] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [filters, setFilters] = useState({ keyword: "", category: "", location: "", sortBy: "rating_desc" });
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
+    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
     const [profileDetails, setProfileDetails] = useState({ name: '', email: '' });
-
-    // State for both modals
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedService, setSelectedService] = useState(null);
 
     const token = localStorage.getItem("token");
-    const axiosWithAuth = useMemo(() => axios.create({ baseURL: API_BASE, headers: { Authorization: `Bearer ${token}` } }), [token]);
+    const axiosWithAuth = useMemo(() => axios.create({
+        baseURL: API_BASE,
+        headers: { Authorization: `Bearer ${token}` }
+    }), [token]);
 
     const debounce = useCallback((func, delay) => {
         let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func(...args), delay);
-        };
+        return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), delay); };
     }, []);
 
     const fetchServices = useCallback(async (currentFilters) => {
@@ -76,11 +78,10 @@ const CustomerDashboard = () => {
     useEffect(() => {
         if (!token) { navigate('/login'); return; }
         const currentUser = JSON.parse(localStorage.getItem("user"));
-        if (currentUser) { setUser(currentUser); }
+        if (currentUser) setUser(currentUser);
         debouncedFetchServices(filters);
     }, [token, navigate, filters, debouncedFetchServices]);
 
-    // Professional search: filter locally by keyword, category, location
     useEffect(() => {
         let filtered = allServices;
         const keyword = filters.keyword.trim().toLowerCase();
@@ -91,37 +92,13 @@ const CustomerDashboard = () => {
                 (s.description && s.description.toLowerCase().includes(keyword))
             );
         }
-        if (filters.category) {
-            filtered = filtered.filter(s => s.category === filters.category);
-        }
-        if (filters.location) {
-            filtered = filtered.filter(s => s.location && s.location.toLowerCase().includes(filters.location.trim().toLowerCase()));
-        }
-        // Sorting
-        if (filters.sortBy === "rating_desc") {
-            filtered = filtered.slice().sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
-        } else if (filters.sortBy === "price_asc") {
-            filtered = filtered.slice().sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
-        } else if (filters.sortBy === "price_desc") {
-            filtered = filtered.slice().sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
-        }
+        if (filters.category) filtered = filtered.filter(s => s.category === filters.category);
+        if (filters.location) filtered = filtered.filter(s => s.location && s.location.toLowerCase().includes(filters.location.trim().toLowerCase()));
+        if (filters.sortBy === "rating_desc") filtered = [...filtered].sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
+        else if (filters.sortBy === "price_asc") filtered = [...filtered].sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        else if (filters.sortBy === "price_desc") filtered = [...filtered].sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
         setServices(filtered);
     }, [allServices, filters]);
-
-    const handleOpenBookingModal = (service) => {
-        setSelectedService(service);
-        setIsBookingModalOpen(true);
-    };
-
-    const handleOpenDetailModal = (service) => {
-        setSelectedService(service);
-        setIsDetailModalOpen(true);
-    };
-
-    const handleFilterChange = (e) => {
-        const { name, value } = e.target;
-        setFilters(prev => ({ ...prev, [name]: value }));
-    };
 
     const handleSignOut = () => {
         localStorage.removeItem("token");
@@ -139,9 +116,9 @@ const CustomerDashboard = () => {
             toast.success("Profile updated successfully!");
             setIsProfileEditModalOpen(false);
         } catch (error) {
-            toast.error("Failed to update profile.");
+            toast.error(error.response?.data?.message || "Failed to update profile.");
         }
-    }
+    };
 
     const uniqueCategories = useMemo(() => ["", "Plumbing", "Electrical", "Carpentry", "House Cleaning", "IT Services", "Appliance Repair", "Gardening", "Tutoring", "Other"], []);
     const getAvailabilityClass = (availability) => availability?.toLowerCase().replace(/\s+/g, '-') || 'unavailable';
@@ -152,6 +129,9 @@ const CustomerDashboard = () => {
             <header className="customer-header">
                 <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>ServiceSphere</div>
                 <div className="header-right">
+                    {/* Notification Bell */}
+                    <NotificationBell axiosWithAuth={axiosWithAuth} />
+
                     <div className="profile-menu">
                         <button onClick={() => setIsProfileDropdownOpen(prev => !prev)} className="profile-btn">
                             <span>Welcome, <strong className="gradient-text">{user?.name || 'Customer'}</strong></span>
@@ -165,8 +145,18 @@ const CustomerDashboard = () => {
                                 <button onClick={() => navigate('/my-bookings')} className="dropdown-item">
                                     <CalendarIcon /> My Bookings
                                 </button>
-                                <button onClick={() => { setProfileDetails({ name: user.name, email: user.email }); setIsProfileDropdownOpen(false); setIsProfileEditModalOpen(true); }} className="dropdown-item">
+                                <button onClick={() => {
+                                    setProfileDetails({ name: user.name, email: user.email });
+                                    setIsProfileDropdownOpen(false);
+                                    setIsProfileEditModalOpen(true);
+                                }} className="dropdown-item">
                                     <UserIcon /> Edit Profile
+                                </button>
+                                <button onClick={() => {
+                                    setIsProfileDropdownOpen(false);
+                                    setIsChangePasswordOpen(true);
+                                }} className="dropdown-item">
+                                    <LockIcon /> Change Password
                                 </button>
                                 <button onClick={handleSignOut} className="dropdown-item">
                                     <PowerIcon /> Sign Out
@@ -186,21 +176,21 @@ const CustomerDashboard = () => {
                 <div className="filters-panel">
                     <div className="filter-input-wrapper">
                         <span className="icon"><SearchIcon /></span>
-                        <input type="text" name="keyword" className="filter-input" placeholder="Service (e.g., plumbing)" value={filters.keyword} onChange={handleFilterChange} />
+                        <input type="text" name="keyword" className="filter-input" placeholder="Service (e.g., plumbing)" value={filters.keyword} onChange={e => setFilters(p => ({ ...p, keyword: e.target.value }))} />
                     </div>
                     <div className="filter-input-wrapper">
                         <span className="icon"><MapPinIcon /></span>
-                        <input type="text" name="location" className="filter-input" placeholder="Location" value={filters.location} onChange={handleFilterChange} />
+                        <input type="text" name="location" className="filter-input" placeholder="Location" value={filters.location} onChange={e => setFilters(p => ({ ...p, location: e.target.value }))} />
                     </div>
                     <div className="filter-input-wrapper">
                         <span className="icon"><TagIcon /></span>
-                        <select name="category" className="filter-select" value={filters.category} onChange={handleFilterChange}>
+                        <select name="category" className="filter-select" value={filters.category} onChange={e => setFilters(p => ({ ...p, category: e.target.value }))}>
                             {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat || 'All Categories'}</option>)}
                         </select>
                     </div>
                     <div className="filter-input-wrapper">
                         <span className="icon"><SortIcon /></span>
-                        <select name="sortBy" className="filter-select" value={filters.sortBy} onChange={handleFilterChange}>
+                        <select name="sortBy" className="filter-select" value={filters.sortBy} onChange={e => setFilters(p => ({ ...p, sortBy: e.target.value }))}>
                             <option value="">Sort By</option>
                             <option value="rating_desc">Rating: High to Low</option>
                             <option value="price_asc">Price: Low to High</option>
@@ -215,9 +205,13 @@ const CustomerDashboard = () => {
                     <div className="services-grid">
                         {services.map(s => (
                             <div key={s.id} className="service-card">
-                                <div className="card-clickable-area" onClick={() => handleOpenDetailModal(s)}>
+                                <div className="card-clickable-area" onClick={() => { setSelectedService(s); setIsDetailModalOpen(true); }}>
                                     <div className="card-img-container">
-                                        <img src={s.image_url || `https://placehold.co/400x250/191925/a99eff?text=${s.service_name.split(' ').map(w => w[0]).join('')}`} alt={s.service_name} className="card-img" />
+                                        <img
+                                            src={s.image_url || `https://placehold.co/400x250/191925/a99eff?text=${s.service_name.split(' ').map(w => w[0]).join('')}`}
+                                            alt={s.service_name}
+                                            className="card-img"
+                                        />
                                         <span className={`availability-badge ${getAvailabilityClass(s.availability)}`}>
                                             {s.availability || 'Not Set'}
                                         </span>
@@ -240,7 +234,10 @@ const CustomerDashboard = () => {
                                         <span>Provider</span>
                                         <p>{s.provider_name || 'Anonymous'}</p>
                                     </div>
-                                    {s.availability === "Available" ? <button className="details-btn" onClick={() => handleOpenBookingModal(s)}>Book Now</button> : <button className="details-btn disabled" disabled>Unavailable</button>}
+                                    {s.availability === "Available"
+                                        ? <button className="details-btn" onClick={() => { setSelectedService(s); setIsBookingModalOpen(true); }}>Book Now</button>
+                                        : <button className="details-btn disabled" disabled>Unavailable</button>
+                                    }
                                 </div>
                             </div>
                         ))}
@@ -253,20 +250,11 @@ const CustomerDashboard = () => {
             </main>
 
             {isBookingModalOpen && (
-                <BookingModal
-                    service={selectedService}
-                    onClose={() => setIsBookingModalOpen(false)}
-                    axiosWithAuth={axiosWithAuth}
-                />
+                <BookingModal service={selectedService} onClose={() => setIsBookingModalOpen(false)} axiosWithAuth={axiosWithAuth} />
             )}
-
             {isDetailModalOpen && (
-                <ServiceDetailModal
-                    service={selectedService}
-                    onClose={() => setIsDetailModalOpen(false)}
-                />
+                <ServiceDetailModal service={selectedService} onClose={() => setIsDetailModalOpen(false)} />
             )}
-
             {isProfileEditModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsProfileEditModalOpen(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -274,11 +262,11 @@ const CustomerDashboard = () => {
                         <form onSubmit={handleUpdateProfile}>
                             <div className="form-group">
                                 <label>Full Name</label>
-                                <input type="text" className="form-input" required value={profileDetails.name} onChange={(e) => setProfileDetails({ ...profileDetails, name: e.target.value })} />
+                                <input type="text" className="form-input" required value={profileDetails.name} onChange={e => setProfileDetails({ ...profileDetails, name: e.target.value })} />
                             </div>
                             <div className="form-group">
                                 <label>Email Address</label>
-                                <input type="email" className="form-input" required value={profileDetails.email} onChange={(e) => setProfileDetails({ ...profileDetails, email: e.target.value })} />
+                                <input type="email" className="form-input" required value={profileDetails.email} onChange={e => setProfileDetails({ ...profileDetails, email: e.target.value })} />
                             </div>
                             <div className="modal-actions">
                                 <button type="button" className="btn btn-secondary" onClick={() => setIsProfileEditModalOpen(false)}>Cancel</button>
@@ -287,6 +275,9 @@ const CustomerDashboard = () => {
                         </form>
                     </div>
                 </div>
+            )}
+            {isChangePasswordOpen && (
+                <ChangePasswordModal axiosWithAuth={axiosWithAuth} onClose={() => setIsChangePasswordOpen(false)} />
             )}
         </div>
     );

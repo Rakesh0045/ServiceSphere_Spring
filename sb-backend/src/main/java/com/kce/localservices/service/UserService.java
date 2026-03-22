@@ -1,5 +1,6 @@
 package com.kce.localservices.service;
 
+import com.kce.localservices.dto.UserDTO;
 import com.kce.localservices.entity.User;
 import com.kce.localservices.event.AnalyticsEvent;
 import com.kce.localservices.repository.UserRepository;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -43,7 +43,6 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
 
-        // Publish analytics events
         eventPublisher.publishEvent(new AnalyticsEvent(this, "total_users", 1));
         if ("Service Provider".equals(user.getRole())) {
             eventPublisher.publishEvent(new AnalyticsEvent(this, "total_providers", 1));
@@ -62,26 +61,41 @@ public class UserService {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Login successful");
         response.put("token", token);
-        response.put("user", user); // This might expose password buffer if serializing entity directly, but Jackson
-                                    // ignores standard mapped byte[] usually.
-        // Better to return DTO. For now, matching node structure.
+        // Use DTO — never serialize the raw User entity (exposes password hash)
+        response.put("user", new UserDTO(user));
         return response;
     }
 
     public User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
-        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     public void updateUserProfile(String name, String email) {
         User user = getCurrentUser();
-        // Check if email is taken by another user
         if (!user.getEmail().equals(email) && userRepository.existsByEmail(email)) {
             throw new RuntimeException("Email already in use");
         }
         user.setName(name);
         user.setEmail(email);
+        userRepository.save(user);
+    }
+
+    /**
+     * Change the current user's password.
+     * Validates old password before setting the new one.
+     */
+    public void changePassword(String oldPassword, String newPassword) {
+        User user = getCurrentUser();
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect.");
+        }
+        if (newPassword.length() < 6) {
+            throw new RuntimeException("New password must be at least 6 characters.");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
 }
