@@ -8,6 +8,15 @@ import BookingModal from './BookingModal';
 import ServiceDetailModal from "./ServiceDetailModal";
 import NotificationBell from './NotificationBell';
 import ChangePasswordModal from './ChangePasswordModal';
+import SearchSuggestions from './SearchSuggestions';
+
+const HeartIcon = ({ filled }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+        fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"
+        strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+);
 
 const API_BASE = "http://localhost:8070/api";
 
@@ -45,6 +54,7 @@ const CustomerDashboard = () => {
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+    const [wishlistIds, setWishlistIds] = useState(new Set());
     const [profileDetails, setProfileDetails] = useState({ name: '', email: '' });
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -80,7 +90,11 @@ const CustomerDashboard = () => {
         const currentUser = JSON.parse(localStorage.getItem("user"));
         if (currentUser) setUser(currentUser);
         debouncedFetchServices(filters);
-    }, [token, navigate, filters, debouncedFetchServices]);
+        // Fetch saved wishlist IDs for heart icons
+        axiosWithAuth.get('/wishlist').then(res => {
+            setWishlistIds(new Set(res.data.map(s => s.id)));
+        }).catch(() => {});
+    }, [token, navigate, filters, debouncedFetchServices, axiosWithAuth]);
 
     useEffect(() => {
         let filtered = allServices;
@@ -99,6 +113,22 @@ const CustomerDashboard = () => {
         else if (filters.sortBy === "price_desc") filtered = [...filtered].sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
         setServices(filtered);
     }, [allServices, filters]);
+
+    const handleWishlistToggle = async (e, service) => {
+        e.stopPropagation();
+        try {
+            const res = await axiosWithAuth.post(`/wishlist/${service.id}/toggle`);
+            if (res.data.saved) {
+                setWishlistIds(prev => new Set([...prev, service.id]));
+                toast.success(`"${service.service_name}" saved to wishlist!`);
+            } else {
+                setWishlistIds(prev => { const s = new Set(prev); s.delete(service.id); return s; });
+                toast.info(`"${service.service_name}" removed from wishlist.`);
+            }
+        } catch {
+            toast.error("Failed to update wishlist.");
+        }
+    };
 
     const handleSignOut = () => {
         localStorage.removeItem("token");
@@ -145,6 +175,9 @@ const CustomerDashboard = () => {
                                 <button onClick={() => navigate('/my-bookings')} className="dropdown-item">
                                     <CalendarIcon /> My Bookings
                                 </button>
+                                <button onClick={() => navigate('/wishlist')} className="dropdown-item">
+                                    ❤️ My Wishlist
+                                </button>
                                 <button onClick={() => {
                                     setProfileDetails({ name: user.name, email: user.email });
                                     setIsProfileDropdownOpen(false);
@@ -175,8 +208,15 @@ const CustomerDashboard = () => {
 
                 <div className="filters-panel">
                     <div className="filter-input-wrapper">
-                        <span className="icon"><SearchIcon /></span>
-                        <input type="text" name="keyword" className="filter-input" placeholder="Service (e.g., plumbing)" value={filters.keyword} onChange={e => setFilters(p => ({ ...p, keyword: e.target.value }))} />
+                        <SearchSuggestions
+                            value={filters.keyword}
+                            onChange={(val) => setFilters(p => ({ ...p, keyword: val }))}
+                            onSelectService={(service) => {
+                                setSelectedService(service);
+                                setIsDetailModalOpen(true);
+                            }}
+                            placeholder="Search services... (e.g., plumbing)"
+                        />
                     </div>
                     <div className="filter-input-wrapper">
                         <span className="icon"><MapPinIcon /></span>
@@ -215,6 +255,13 @@ const CustomerDashboard = () => {
                                         <span className={`availability-badge ${getAvailabilityClass(s.availability)}`}>
                                             {s.availability || 'Not Set'}
                                         </span>
+                                        <button
+                                            className={`card-heart-btn ${wishlistIds.has(s.id) ? 'saved' : ''}`}
+                                            onClick={(e) => handleWishlistToggle(e, s)}
+                                            title={wishlistIds.has(s.id) ? 'Remove from wishlist' : 'Save to wishlist'}
+                                        >
+                                            <HeartIcon filled={wishlistIds.has(s.id)} />
+                                        </button>
                                     </div>
                                     <div className="card-content">
                                         <div className="card-header">

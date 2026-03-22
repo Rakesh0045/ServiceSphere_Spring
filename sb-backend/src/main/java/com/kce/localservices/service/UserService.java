@@ -1,11 +1,9 @@
 package com.kce.localservices.service;
 
-import com.kce.localservices.dto.UserDTO;
 import com.kce.localservices.entity.User;
 import com.kce.localservices.event.AnalyticsEvent;
 import com.kce.localservices.repository.UserRepository;
 import com.kce.localservices.security.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,20 +19,28 @@ import java.util.Map;
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
 
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            AuthenticationManager authenticationManager,
+            JwtUtil jwtUtil,
+            ApplicationEventPublisher eventPublisher) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtUtil = jwtUtil;
+        this.eventPublisher = eventPublisher;
+    }
 
     public void registerUser(User user) {
         if (userRepository.existsByEmail(user.getEmail())) {
@@ -62,7 +68,12 @@ public class UserService {
         response.put("message", "Login successful");
         response.put("token", token);
         // Use DTO — never serialize the raw User entity (exposes password hash)
-        response.put("user", new UserDTO(user));
+        Map<String, Object> userView = new HashMap<>();
+        userView.put("id", user.getId());
+        userView.put("name", user.getName());
+        userView.put("email", user.getEmail());
+        userView.put("role", user.getRole());
+        response.put("user", userView);
         return response;
     }
 

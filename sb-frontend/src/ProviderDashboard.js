@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { format } from 'date-fns';
 import ImageUploader from './ImageUploader';
 import NotificationBell from './NotificationBell';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import ChangePasswordModal from './ChangePasswordModal';
 
 const API_BASE = "http://localhost:8070/api";
@@ -59,6 +60,7 @@ const ProviderDashboard = () => {
     const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [analytics, setAnalytics] = useState({ monthlyEarnings: [], statusBreakdown: {} });
     const [profileDetails, setProfileDetails] = useState({ name: '', email: '' });
     const [user, setUser] = useState(null);
 
@@ -78,13 +80,15 @@ const ProviderDashboard = () => {
     const fetchProviderData = async (providerId, initialLoad = false) => {
         if (initialLoad) setLoading(true);
         try {
-            const [servicesRes, bookingsRes, scheduleRes] = await Promise.all([
+            const [servicesRes, bookingsRes, scheduleRes, analyticsRes] = await Promise.all([
                 axiosWithAuth.get("/services", { params: { provider_id: providerId } }),
                 axiosWithAuth.get("/bookings"),
-                axiosWithAuth.get("/schedules")
+                axiosWithAuth.get("/schedules"),
+                axiosWithAuth.get("/provider/analytics").catch(() => ({ data: { monthlyEarnings: [], statusBreakdown: {} } }))
             ]);
             setServices(servicesRes.data || []);
             setBookings(bookingsRes.data || []);
+            setAnalytics(analyticsRes.data || { monthlyEarnings: [], statusBreakdown: {} });
             const fetchedSchedule = scheduleRes.data;
             const fullSchedule = initializeSchedule();
             fetchedSchedule.forEach(s => {
@@ -264,6 +268,9 @@ const ProviderDashboard = () => {
                     <button className={`tab-btn ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')}>My Services</button>
                     <button className={`tab-btn ${activeTab === 'addService' ? 'active' : ''}`} onClick={() => setActiveTab('addService')}>Add Service</button>
                     <button className={`tab-btn ${activeTab === 'schedule' ? 'active' : ''}`} onClick={() => setActiveTab('schedule')}>My Schedule</button>
+                    <button className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
+                        📊 Analytics
+                    </button>
                     <button className={`tab-btn ${activeTab === 'bookings' ? 'active' : ''}`} onClick={() => setActiveTab('bookings')}>
                         Customer Bookings
                         {bookings.filter(b => b.status === 'Pending').length > 0 && (
@@ -387,6 +394,68 @@ const ProviderDashboard = () => {
                     </section>
                 )}
             </main>
+
+
+                {activeTab === 'analytics' && (
+                    <section className="content-panel">
+                        <h3 className="panel-header">📊 Earnings Analytics</h3>
+                        <p className="panel-subtitle">Your performance over the last 6 months.</p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+                            {[
+                                { label: 'Total Earnings', value: `₹${bookings.filter(b => b.status === 'Completed').reduce((a, b) => a + (parseFloat(b.price) || 0), 0).toLocaleString('en-IN')}`, color: '#2ecc71' },
+                                { label: 'Completed', value: bookings.filter(b => b.status === 'Completed').length, color: '#2ecc71' },
+                                { label: 'Pending', value: bookings.filter(b => b.status === 'Pending').length, color: '#f39c12' },
+                                { label: 'Cancelled', value: bookings.filter(b => b.status === 'Cancelled').length, color: '#e74c3c' },
+                            ].map((s, i) => (
+                                <div key={i} style={{ background: 'var(--dark-bg)', borderRadius: '12px', padding: '1.25rem', border: '1px solid var(--border-color)', borderLeft: `4px solid ${s.color}` }}>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</p>
+                                    <p style={{ margin: '0.5rem 0 0', fontSize: '1.75rem', fontWeight: 700, color: s.color }}>{s.value}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ background: 'var(--dark-bg)', borderRadius: '12px', padding: '1.5rem', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+                            <h4 style={{ margin: '0 0 1.25rem', fontSize: '1rem', fontWeight: 600 }}>Monthly Earnings (Last 6 Months)</h4>
+                            {analytics.monthlyEarnings.length === 0 ? (
+                                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>No completed bookings yet to chart.</p>
+                            ) : (
+                                <ResponsiveContainer width="100%" height={260}>
+                                    <BarChart data={analytics.monthlyEarnings} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                                        <XAxis dataKey="month" tick={{ fill: '#a0a0b0', fontSize: 12 }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fill: '#a0a0b0', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v}`} />
+                                        <Tooltip
+                                            contentStyle={{ background: '#16161f', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: '#f0f0f5' }}
+                                            formatter={(value) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Earnings']}
+                                        />
+                                        <Bar dataKey="earnings" fill="#6a5af9" radius={[6, 6, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+
+                        <div style={{ background: 'var(--dark-bg)', borderRadius: '12px', padding: '1.5rem', border: '1px solid var(--border-color)' }}>
+                            <h4 style={{ margin: '0 0 1.25rem', fontSize: '1rem', fontWeight: 600 }}>Booking Status Breakdown</h4>
+                            {Object.keys(analytics.statusBreakdown).length === 0 ? (
+                                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>No booking data yet.</p>
+                            ) : (
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <PieChart>
+                                        <Pie data={Object.entries(analytics.statusBreakdown).map(([name, value]) => ({ name, value: Number(value) }))}
+                                            cx="50%" cy="50%" outerRadius={85} dataKey="value" label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`}
+                                            labelLine={false}>
+                                            {Object.keys(analytics.statusBreakdown).map((status, i) => (
+                                                <Cell key={i} fill={({ Completed: '#2ecc71', Pending: '#f39c12', Cancelled: '#e74c3c', Confirmed: '#3b82f6' })[status] || '#6a5af9'} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip contentStyle={{ background: '#16161f', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: '#f0f0f5' }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </section>
+                )}
 
             {/* --- Modals --- */}
             {isEditServiceModalOpen && editingService && (

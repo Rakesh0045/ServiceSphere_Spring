@@ -7,6 +7,7 @@ import CustomerDashboard from "./CustomerDashboard";
 import ProviderDashboard from "./ProviderDashboard";
 import MyBookings from "./MyBookings";
 import AdminDashboard from "./AdminDashboard";
+import WishlistPage from "./WishlistPage";
 import NotFound from "./NotFound";
 
 function App() {
@@ -20,7 +21,7 @@ function App() {
         <Route path="/provider" element={<ProviderDashboard />} />
         <Route path="/my-bookings" element={<MyBookings />} />
         <Route path="/admin" element={<AdminDashboard />} />
-        {/* Catch-all 404 route */}
+        <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

@@ -4,6 +4,8 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import { ToastContainer, toast } from 'react-toastify';
 import RatingModal from './RatingModal';
+import ConfirmToast from './ConfirmToast';
+import PaymentButton from './PaymentButton';
 import './MyBookings.css';
 
 const API_BASE = "http://localhost:8070/api";
@@ -91,9 +93,49 @@ const MyBookings = () => {
     };
 
     const getStatusClass = (status) => status ? status.toLowerCase() : '';
+    const statusEmoji = { Pending: '⏳', Confirmed: '✅', Paid: '💰', Completed: '🎉', Cancelled: '❌' };
 
     const handleBackClick = () => {
         navigate(user?.role === 'Service Provider' ? '/provider' : '/customer');
+    };
+
+    const handleExportCSV = () => {
+        if (!bookings.length) {
+            toast.info('No bookings to export.');
+            return;
+        }
+
+        const headers = [
+            'Booking ID',
+            'Service',
+            'Customer/Provider',
+            'Date Time',
+            'Price',
+            'Status'
+        ];
+
+        const rows = bookings.map((booking) => [
+            booking.id,
+            booking.service_name || '',
+            user?.role === 'Customer' ? (booking.provider_name || '') : (booking.customer_name || ''),
+            booking.booking_start_time ? format(new Date(booking.booking_start_time), "yyyy-MM-dd HH:mm") : '',
+            booking.price ?? '',
+            booking.status || ''
+        ]);
+
+        const csvContent = [headers, ...rows]
+            .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'my-bookings.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -111,7 +153,18 @@ const MyBookings = () => {
                 </header>
 
                 <main className="bookings-container">
-                    <h1>My Bookings</h1>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                        <h1 style={{ margin: 0 }}>My Bookings</h1>
+                        {bookings.length > 0 && (
+                            <button
+                                className="back-btn"
+                                onClick={handleExportCSV}
+                                style={{ color: '#2ecc71', borderColor: 'rgba(46,204,113,0.3)', background: 'rgba(46,204,113,0.08)' }}
+                            >
+                                ⬇ Export CSV
+                            </button>
+                        )}
+                    </div>
                     <p>Here is a list of all your scheduled appointments and past services.</p>
 
                     <div className="bookings-list">
@@ -123,7 +176,7 @@ const MyBookings = () => {
                                     <div className="booking-card-header">
                                         <h3>{booking.service_name}</h3>
                                         <span className={`booking-status ${getStatusClass(booking.status)}`}>
-                                            {booking.status}
+                                            {statusEmoji[booking.status] || ''} {booking.status}
                                         </span>
                                     </div>
 
@@ -159,6 +212,29 @@ const MyBookings = () => {
                                             >
                                                 {cancellingId === booking.id ? 'Cancelling...' : '✕ Cancel Booking'}
                                             </button>
+                                        </div>
+                                    )}
+
+                                    {/* --- Confirmed: show Pay button (customer) --- */}
+                                    {booking.status === 'Confirmed' && user?.role === 'Customer' && (
+                                        <div className="booking-card-footer">
+                                            <p style={{ margin: '0 0 0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                                Your booking is confirmed! Complete payment to secure your slot.
+                                            </p>
+                                            <PaymentButton
+                                                booking={booking}
+                                                axiosWithAuth={axiosWithAuth}
+                                                onPaymentSuccess={fetchBookings}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* --- Paid: show payment confirmed badge --- */}
+                                    {booking.status === 'Paid' && (
+                                        <div className="booking-card-footer">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '8px', padding: '0.75rem 1rem', color: '#10b981', fontWeight: 600 }}>
+                                                💰 Payment completed — your slot is secured!
+                                            </div>
                                         </div>
                                     )}
 
