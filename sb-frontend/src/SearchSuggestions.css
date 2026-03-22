@@ -1,0 +1,198 @@
+/* SearchSuggestions.css */
+
+.search-suggestions-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    color: var(--text-secondary, #a0a0b0);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+}
+
+.search-main-input {
+    width: 100%;
+    padding: 14px 40px 14px 46px;
+    background: var(--dark-bg, #10101a);
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    border-radius: 10px;
+    color: var(--text-primary, #f0f0f5);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.search-main-input:focus {
+    outline: none;
+    border-color: var(--primary-color, #6a5af9);
+    box-shadow: 0 0 0 3px rgba(106, 90, 249, 0.2);
+}
+
+.search-spinner {
+    position: absolute;
+    right: 14px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: var(--primary-light, #a99eff);
+    border-radius: 50%;
+    animation: ss-spin 0.7s linear infinite;
+}
+
+@keyframes ss-spin { to { transform: rotate(360deg); } }
+
+.search-clear-btn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--text-secondary, #a0a0b0);
+    font-size: 1.25rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 50%;
+    transition: color 0.2s;
+}
+
+.search-clear-btn:hover { color: var(--text-primary, #f0f0f5); }
+
+/* Dropdown */
+.suggestions-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--card-bg, #191925);
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+    z-index: 500;
+    overflow: hidden;
+    animation: ss-dropIn 0.15s ease;
+}
+
+@keyframes ss-dropIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.suggestions-label {
+    margin: 0;
+    padding: 10px 14px 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary, #a0a0b0);
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+    background: rgba(106, 90, 249, 0.08);
+}
+
+.suggestion-img {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.suggestion-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.suggestion-name {
+    margin: 0 0 3px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary, #f0f0f5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.suggestion-meta {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--text-secondary, #a0a0b0);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.suggestion-category {
+    background: rgba(106, 90, 249, 0.12);
+    color: #a99eff;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.suggestion-rating {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: #f39c12;
+}
+
+.suggestion-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.suggestion-price {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #a99eff;
+}
+
+.suggestion-avail {
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.suggestions-footer {
+    padding: 8px 14px;
+    font-size: 0.72rem;
+    color: rgba(160,160,176,0.5);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    text-align: center;
+}
+
+.suggestions-empty {
+    padding: 1.25rem;
+    text-align: center;
+    color: var(--text-secondary, #a0a0b0);
+    font-size: 0.9rem;
+    margin: 0;
+}

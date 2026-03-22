@@ -66,7 +66,8 @@ public class WishlistService {
         return wishlistItems.stream().map(w -> {
             Map<String, Object> map = new HashMap<>();
             Service service = serviceRepository.findById(w.getServiceId()).orElse(null);
-            if (service == null) return null;
+            if (service == null)
+                return null;
 
             map.put("wishlist_id", w.getId());
             map.put("saved_at", w.getCreatedAt());
